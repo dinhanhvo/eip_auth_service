@@ -19,10 +19,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.validation.Valid;
@@ -33,67 +30,86 @@ import java.util.Collections;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    @Autowired
-    AuthenticationManager authenticationManager;
+	@Autowired
+	AuthenticationManager authenticationManager;
 
-    @Autowired
-    UserRepository userRepository;
+	@Autowired
+	UserRepository userRepository;
 
-    @Autowired
-    RoleRepository roleRepository;
+	@Autowired
+	RoleRepository roleRepository;
 
-    @Autowired
-    PasswordEncoder passwordEncoder;
+	@Autowired
+	PasswordEncoder passwordEncoder;
 
-    @Autowired
-    JwtTokenProvider tokenProvider;
+	@Autowired
+	JwtTokenProvider tokenProvider;
 
-    @PostMapping("/signin")
-    public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
+	@GetMapping("/hello")
+	public String hello() {
+		return "Hello User, have a nice day.";
+	}
 
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        loginRequest.getUsernameOrEmail(),
-                        loginRequest.getPassword()
-                )
-        );
+	@PostMapping("/signin")
+	public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+		Authentication authentication = authenticationManager.authenticate(
+				new UsernamePasswordAuthenticationToken(loginRequest.getUsernameOrEmail(), loginRequest.getPassword()));
 
-        String jwt = tokenProvider.generateToken(authentication);
-        return ResponseEntity.ok(new JwtAuthenticationResponse(jwt));
-    }
+		SecurityContextHolder.getContext().setAuthentication(authentication);
 
-    @PostMapping("/signup")
-    public ResponseEntity<?> registerUser(@Valid @RequestBody SignUpRequest signUpRequest) {
-        if(userRepository.existsByUsername(signUpRequest.getUsername())) {
-            return new ResponseEntity(new ApiResponse(false, "Username is already taken!"),
-                    HttpStatus.BAD_REQUEST);
-        }
+		String jwt = tokenProvider.generateToken(authentication);
+		return ResponseEntity.ok(new JwtAuthenticationResponse(jwt));
+	}
 
-        if (userRepository.existsByEmail(signUpRequest.getEmail())) {
-            return new ResponseEntity(new ApiResponse(false, "Email Address already in use!"),
-                    HttpStatus.BAD_REQUEST);
-        }
+	@PostMapping("/signup")
+	public ResponseEntity<?> registerUser(@Valid @RequestBody SignUpRequest signUpRequest) {
+		if (userRepository.existsByUsername(signUpRequest.getUsername())) {
+			return new ResponseEntity(new ApiResponse(false, "Username is already taken!"), HttpStatus.BAD_REQUEST);
+		}
 
-        // Creating user's account
-        User user = new User(signUpRequest.getName(), signUpRequest.getUsername(),
-                signUpRequest.getEmail(), signUpRequest.getPassword());
+		if (userRepository.existsByEmail(signUpRequest.getEmail())) {
+			return new ResponseEntity(new ApiResponse(false, "Email Address already in use!"), HttpStatus.BAD_REQUEST);
+		}
 
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+		// Creating user's account
+		User user = new User(signUpRequest.getName(), signUpRequest.getUsername(), signUpRequest.getEmail(),
+				signUpRequest.getPassword(), signUpRequest.getSerialWeigher());
 
-        Role userRole = roleRepository.findByName(RoleName.ROLE_USER)
-                .orElseThrow(() -> new AppException("User Role not set."));
+		user.setPassword(passwordEncoder.encode(user.getPassword()));
 
-        user.setRoles(Collections.singleton(userRole));
+		Role userRole = roleRepository.findByName(RoleName.ROLE_USER)
+				.orElseThrow(() -> new AppException("User Role not set."));
 
-        User result = userRepository.save(user);
+		user.setRoles(Collections.singleton(userRole));
 
-        URI location = ServletUriComponentsBuilder
-                .fromCurrentContextPath().path("/users/{username}")
-                .buildAndExpand(result.getUsername()).toUri();
+		User result = userRepository.save(user);
+
+		URI location = ServletUriComponentsBuilder.fromCurrentContextPath().path("/users/{username}")
+				.buildAndExpand(result.getUsername()).toUri();
 
 //        return ResponseEntity.created(location).body(new ApiResponse(true, "User registered successfully"));
-        return  ResponseEntity.ok(result);
-    }
+		return ResponseEntity.ok(result);
+	}
+
+	@PostMapping("/me")
+	public ResponseEntity<?> getUserInfo(@Valid @RequestParam("token") String token) {
+
+		Long userId = tokenProvider.getUserIdFromJWT(token);
+		User user = userRepository.findById(userId).get();
+
+		return ResponseEntity.ok(user);
+	}
+
+	@PostMapping("/user/{userId}/change")
+	public ResponseEntity<?> changeUserInfo(@PathVariable("userId") Long userId,
+			@Valid @RequestParam("serialWeigher") String serialWeigher) {
+
+		User user = userRepository.findById(userId).get();
+		user.setSerialWeigher(serialWeigher);
+		userRepository.save(user);
+		User ret = new User();
+		ret.setPassword(null);
+		return ResponseEntity.ok(ret);
+	}
 }

@@ -5,11 +5,10 @@
 
 	<groupId>eip</groupId>
 	<artifactId>auth</artifactId>
-	<version>1.0.0</version>
 	<packaging>jar</packaging>
 
 	<name>auth</name>
-	<description>Polling App built with Spring Boot, Spring Security, MySQL and JWT</description>
+	<description>Authen, author services </description>
 
 	<parent>
 		<groupId>org.springframework.boot</groupId>
@@ -77,6 +76,18 @@
 		</dependency>
 
 		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>RELEASE</version>
+			<scope>provided</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-tomcat</artifactId>
+			<scope>provided</scope>
+		</dependency>    
+		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter</artifactId>
 			<exclusions>
@@ -99,6 +110,6 @@
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
 		</plugins>
+		<finalName>${project.artifactId}</finalName>
 	</build>
-
 </project>
