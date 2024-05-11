@@ -53,6 +53,12 @@ public class UserController {
         return ResponseEntity.ok(u);
     }
 
+    @DeleteMapping("/user")
+    public ResponseEntity<Boolean> deleteUser(@RequestParam("id") long id) {
+        userRepository.deleteById(id);
+        return ResponseEntity.ok(true);
+    }
+
 //    @GetMapping("/users/{username}")
 //    public UserProfile getUserProfile(@PathVariable(value = "username") String username) {
 //        User user = userRepository.findByUsername(username)

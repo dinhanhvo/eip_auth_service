@@ -28,7 +28,7 @@ public class WeighController {
         return ResponseEntity.ok(weighService.updateWeigh(weigh));
     }
     @DeleteMapping("/weigh")
-    public ResponseEntity<Boolean> deleteWeigh(long id) {
+    public ResponseEntity<Boolean> deleteWeigh(@RequestParam("id") long id) {
         weighService.deleteWeigh(id);
         return ResponseEntity.ok(true);
     }
