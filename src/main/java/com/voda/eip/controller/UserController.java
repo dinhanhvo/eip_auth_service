@@ -1,8 +1,11 @@
 package com.voda.eip.controller;
 
 import com.voda.eip.exception.ResourceNotFoundException;
+import com.voda.eip.model.Role;
+import com.voda.eip.model.RoleName;
 import com.voda.eip.model.User;
 import com.voda.eip.payload.*;
+import com.voda.eip.repository.RoleRepository;
 import com.voda.eip.repository.UserRepository;
 import com.voda.eip.security.CurrentUser;
 import com.voda.eip.security.UserPrincipal;
@@ -14,12 +17,18 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @RestController
 @RequestMapping("/api")
 public class UserController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private RoleRepository roleRepository;
 
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
@@ -50,6 +59,27 @@ public class UserController {
     @PutMapping("/user")
     public ResponseEntity<User> updateUser(@RequestBody User user) {
         User u = userRepository.save(user);
+        return ResponseEntity.ok(u);
+    }
+
+//    @PostMapping("/user/{userId}")
+//    public ResponseEntity<User> updateRoleUser(@PathVariable("userId") Long userId, @RequestBody Role role) {
+//        User u = userRepository.findById(userId).get();
+//        Set<Role> roles = u.getRoles();
+//        roles.add(role);
+//        userRepository.save(u);
+//        return ResponseEntity.ok(u);
+//    }
+
+    @PostMapping("/user/{userId}")
+    public ResponseEntity<User> updateRoleNameUser(@PathVariable("userId") Long userId, @RequestParam String roleName) {
+        User u = userRepository.findById(userId).get();
+        Set<Role> roles = u.getRoles();
+
+        RoleName roleName1 = RoleName.valueOf(roleName);
+        Role role = roleRepository.findByName(roleName1).get();
+        roles.add(role);
+        userRepository.save(u);
         return ResponseEntity.ok(u);
     }
 
